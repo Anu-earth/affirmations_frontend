@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import { config } from './config'
 
 function App() {
   const [affirmations, setAffirmations] = useState([])
@@ -17,7 +18,7 @@ function App() {
       try {
         setLoading(true)
         setError(null)
-        const response = await fetch('http://localhost:7777/getsheetsdata')
+        const response = await fetch(config.apiEndpoint)
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
@@ -134,7 +135,7 @@ function App() {
         <div className="home-screen">
           <div className="initial-text">
             <p>Error loading affirmations: {error}</p>
-            <p>Please make sure the backend is running at http://localhost:7777</p>
+            <p>Please make sure the backend is running at {config.apiBaseUrl}</p>
           </div>
         </div>
       </div>

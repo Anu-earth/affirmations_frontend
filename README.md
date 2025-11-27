@@ -1,4 +1,45 @@
-# React + Vite
+# Affirmations Frontend
+
+React + Vite application for displaying affirmations.
+
+## Environment Setup
+
+This application supports both development and production modes with different API endpoints.
+
+### Local Development
+
+1. Copy `.env.example` to `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. The `.env.local` file is already configured for local development:
+   ```
+   VITE_API_URL=http://localhost:7777
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+### Production (Vercel)
+
+When deploying to Vercel, set the following environment variable in your Vercel project settings:
+
+- **Variable Name**: `VITE_API_URL`
+- **Value**: `https://affirmations-backend.fly.dev`
+
+**How to set in Vercel:**
+1. Go to your project in Vercel dashboard
+2. Navigate to Settings → Environment Variables
+3. Add `VITE_API_URL` with value `https://affirmations-backend.fly.dev`
+4. Make sure to select "Production" environment
+5. Redeploy your application
+
+---
+
+## React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
