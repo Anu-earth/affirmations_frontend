@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { config } from './config'
+import localDatabase from './database.json'
 
 function App() {
   const [affirmations, setAffirmations] = useState([])
@@ -12,30 +13,67 @@ function App() {
   const [viewedIndices, setViewedIndices] = useState(new Set())
   const [shuffledIndices, setShuffledIndices] = useState([])
 
-  // Fetch affirmations from API
+  // Fetch affirmations from API, fallback to local database
   useEffect(() => {
     const fetchAffirmations = async () => {
       try {
         setLoading(true)
         setError(null)
-        const response = await fetch(config.apiEndpoint)
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+        // Try to fetch from API first
+        try {
+          console.log('Fetching from API:', config.apiEndpoint)
+          const response = await fetch(config.apiEndpoint)
+          
+          console.log('API Response status:', response.status, response.statusText)
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error('API Error Response:', errorText)
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
+          }
+          
+          const data = await response.json()
+          console.log('API Response data:', data)
+          
+          // Check if the response has an error (backend might return error in JSON)
+          if (data.error) {
+            console.warn('Backend returned error:', data.error)
+            throw new Error(`Backend error: ${data.error}`)
+          }
+          
+          // Extract column C (index 2) from data array, skipping the first header row
+          if (!data.data || !Array.isArray(data.data)) {
+            throw new Error('Invalid API response format: missing data array')
+          }
+          
+          const extractedAffirmations = data.data
+            .slice(1) // Skip header row
+            .map(row => row[2]) // Get column C (index 2)
+            .filter(affirmation => affirmation && affirmation.trim() !== '') // Filter out empty values
+          
+          if (extractedAffirmations.length > 0) {
+            console.log('Successfully loaded', extractedAffirmations.length, 'affirmations from API')
+            setAffirmations(extractedAffirmations)
+            setLoading(false)
+            return
+          } else {
+            throw new Error('No affirmations found in API response')
+          }
+        } catch (apiError) {
+          console.warn('API fetch failed, using local database:', apiError.message)
+          // Fall through to use local database
         }
         
-        const data = await response.json()
-        
-        // Extract column C (index 2) from data array, skipping the first header row
-        const extractedAffirmations = data.data
-          .slice(1) // Skip header row
-          .map(row => row[2]) // Get column C (index 2)
-          .filter(affirmation => affirmation && affirmation.trim() !== '') // Filter out empty values
-        
-        setAffirmations(extractedAffirmations)
+        // Fallback to local database.json
+        if (localDatabase && localDatabase.affirmations && localDatabase.affirmations.length > 0) {
+          setAffirmations(localDatabase.affirmations)
+        } else {
+          throw new Error('No affirmations available from API or local database')
+        }
       } catch (err) {
         setError(err.message)
-        console.error('Error fetching affirmations:', err)
+        console.error('Error loading affirmations:', err)
       } finally {
         setLoading(false)
       }
@@ -129,13 +167,13 @@ function App() {
   }
 
   // Error state
-  if (error) {
+  if (error && affirmations.length === 0) {
     return (
       <div className="app-container">
         <div className="home-screen">
           <div className="initial-text">
             <p>Error loading affirmations: {error}</p>
-            <p>Please make sure the backend is running at {config.apiBaseUrl}</p>
+            <p>Please check your connection or backend configuration.</p>
           </div>
         </div>
       </div>
